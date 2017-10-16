@@ -1,5 +1,8 @@
 # DeepNeuralNetwork
-Deep neural network implemented in Java from scratch, without using library/framework.
+Deep neural network implemented in Java from scratch.
+Plan Java code without using any library or framework.
+Idea for those who are beginning with machine learning.
+Based on guidelines by Andrew NG in his Deep Learning specialization at Cousera.
 
 Features:
 * Muli-layer network, the number of layers is configurable.
