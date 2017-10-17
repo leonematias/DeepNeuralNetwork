@@ -197,10 +197,11 @@ public class DeepNeuralNetwork {
         CacheItem cache;
         String layerIdx;
         BackpropResult res;
-        
-        //Compute sigmoid gradient for last layer
-        //dAL = - ((Y / AL) - ((1-Y) / (1-AL)))
+
+        //Cross-entropy loss derivative: dAL = - ((Y / AL) - ((1-Y) / (1-AL)))
         Matrix2 dAL = Matrix2.divEW(Y, AL).sub(Matrix2.divEW(Y.oneMinus(), AL.oneMinus())).mul(-1f);
+
+        //Compute sigmoid gradient for output layer
         cache = caches.get(L - 1);
         res = linearActivationBackward(dAL, cache, SigmoidBackward.INSTANCE, lambda);
         layerIdx = String.valueOf(L);
@@ -363,7 +364,8 @@ public class DeepNeuralNetwork {
         }
         
     }
-    
+
+
     
     
     

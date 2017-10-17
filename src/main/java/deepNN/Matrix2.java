@@ -163,6 +163,10 @@ public class Matrix2 {
     public Matrix2 log() {
         return apply(LogOp.INSTANCE);
     }
+
+    public Matrix2 exp() {
+        return apply(ExpOp.INSTANCE);
+    }
     
     public Matrix2 sigmoid() {
         return apply(SigmoidOp.INSTANCE);
@@ -347,6 +351,74 @@ public class Matrix2 {
         }
         return sum;
     }
+
+    public static Matrix2 maxColumns(Matrix2 m) {
+        Matrix2 r = new Matrix2(m.rows, 1);
+        for (int row = 0; row < m.rows; row++) {
+            float max = Float.MIN_VALUE;
+            for (int col = 0; col < m.cols; col++) {
+                max = Math.max(max, m.get(row, col));
+            }
+            r.set(row, 0, max);
+        }
+        return r;
+    }
+
+    public static Matrix2 maxRows(Matrix2 m) {
+        Matrix2 r = new Matrix2(1, m.cols);
+        for (int col = 0; col < m.cols; col++) {
+            float max = Float.MIN_VALUE;
+            for (int row = 0; row < m.rows; row++) {
+                max = Math.max(max, m.get(row, col));
+            }
+            r.set(0, col, max);
+        }
+        return r;
+    }
+
+    public static Matrix2 minColumns(Matrix2 m) {
+        Matrix2 r = new Matrix2(m.rows, 1);
+        for (int row = 0; row < m.rows; row++) {
+            float min = Float.MAX_VALUE;
+            for (int col = 0; col < m.cols; col++) {
+                min = Math.min(min, m.get(row, col));
+            }
+            r.set(row, 0, min);
+        }
+        return r;
+    }
+
+    public static Matrix2 minRows(Matrix2 m) {
+        Matrix2 r = new Matrix2(1, m.cols);
+        for (int col = 0; col < m.cols; col++) {
+            float min = Float.MAX_VALUE;
+            for (int row = 0; row < m.rows; row++) {
+                min = Math.min(min, m.get(row, col));
+            }
+            r.set(0, col, min);
+        }
+        return r;
+    }
+
+    public static float max(Matrix2 m) {
+        float max = Float.MIN_VALUE;
+        for (int row = 0; row < m.rows; row++) {
+            for (int col = 0; col < m.cols; col++) {
+                max = Math.max(max, m.get(row, col));
+            }
+        }
+        return max;
+    }
+
+    public static float min(Matrix2 m) {
+        float min = Float.MAX_VALUE;
+        for (int row = 0; row < m.rows; row++) {
+            for (int col = 0; col < m.cols; col++) {
+                min = Math.min(min, m.get(row, col));
+            }
+        }
+        return min;
+    }
     
     public static Matrix2 apply(Matrix2 m, ElementWiseOp op) {
         Matrix2 r = m.emptyCopy();
@@ -460,6 +532,10 @@ public class Matrix2 {
         return r;
     }
 
+    public static Matrix2 getColumn(Matrix2 m, int col) {
+        return Matrix2.getColumns(m, new int[]{col});
+    }
+
     public static Matrix2 getRows(Matrix2 m, int[] indices) {
         if(indices == null || indices.length == 0)
             error("Invalid indices: " + Arrays.toString(indices));
@@ -473,7 +549,10 @@ public class Matrix2 {
         }
         return r;
     }
-    
+
+    public static Matrix2 getRow(Matrix2 m, int row) {
+        return Matrix2.getRows(m, new int[]{row});
+    }
     
     
     
@@ -618,6 +697,14 @@ public class Matrix2 {
         @Override
         public float apply(float v) {
             return (float)Math.log(v);
+        }
+    }
+
+    public static class ExpOp implements ElementWiseOp {
+        public static final ElementWiseOp INSTANCE = new ExpOp();
+        @Override
+        public float apply(float v) {
+            return (float)Math.exp(v);
         }
     }
     
