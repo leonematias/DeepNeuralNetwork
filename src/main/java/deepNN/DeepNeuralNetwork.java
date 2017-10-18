@@ -109,9 +109,18 @@ public class DeepNeuralNetwork {
         List<CacheItem> caches = new ArrayList<>();
         
         Matrix2 AL = modelForward(X, parameters, caches, this.hiddenActivationFunc, this.outputActivationFunc);
-        
-        //AL > 0.5
-        return AL.greater(0.5f);
+
+        Matrix2 prediction;
+        if(AL.rows() == 1) {
+            //AL > 0.5
+            prediction = AL.greater(0.5f);
+        } else {
+            //Convert each column of AL to a one-hot vec picking the max value
+            Matrix2 max = AL.maxPerColumn().broadcastRow(AL.rows());
+            prediction = Matrix2.eqEW(AL, max);
+        }
+
+        return prediction;
     }
     
     

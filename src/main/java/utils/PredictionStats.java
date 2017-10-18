@@ -40,6 +40,15 @@ public class PredictionStats {
         f1 = 2 * (precision * recall) / (precision + recall);
     }
 
+    public static float computeAccuracy(Matrix2 Y, Matrix2 Yhat) {
+        int m = Y.cols();
+        int K = Y.rows();
+
+        float totalGood = Matrix2.eqEW(Y, Yhat).sum();
+        float totalPoints = K * m;
+        return totalGood / totalPoints;
+    }
+
     public int getTruePositives() {
         return truePositives;
     }

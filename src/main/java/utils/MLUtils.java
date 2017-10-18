@@ -1,5 +1,6 @@
 package utils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -55,6 +56,30 @@ public abstract class MLUtils {
         float[] vec = new float[totalLabels];
         vec[label] = 1;
         return vec;
+    }
+
+    public static Map<Integer, Float> computeSamplesDiversity(List<SampleItem> items) {
+        int m = items.size();
+        Map<Integer, Float> labelMap = new HashMap<>();
+        for (SampleItem item : items) {
+            Float currentObj = labelMap.get(item.getLabel());
+            float total = 0;
+            if(currentObj != null) {
+                total = currentObj;
+            }
+            labelMap.put(item.getLabel(), total + 1);
+        }
+        for (Map.Entry<Integer, Float> e : labelMap.entrySet()) {
+            e.setValue(e.getValue() / m * 100f);
+        }
+        return labelMap;
+    }
+
+    public static void printSamplesDiversity(List<SampleItem> items) {
+        Map<Integer, Float> diversity = computeSamplesDiversity(items);
+        for (Map.Entry<Integer, Float> e : diversity.entrySet()) {
+            System.out.println(" - " + e.getKey() + ": " + e.getValue() + "%");
+        }
     }
 
 

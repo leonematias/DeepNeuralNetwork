@@ -14,7 +14,8 @@ import java.util.Random;
  */
 public class Matrix2 {
     
-    private static final NumberFormat FORMAT = new DecimalFormat("0.###");
+    private static final NumberFormat FORMAT = new DecimalFormat("0.####");
+    public static final float EPSILON = 0.0001f;
     
     private final float[] data;
     private final int rows;
@@ -143,7 +144,11 @@ public class Matrix2 {
     public Matrix2 apply(ElementWiseOp op) {
         return Matrix2.apply(this, op);
     }
-    
+
+    public Matrix2 apply(ElementWiseBoolOp op) {
+        return Matrix2.apply(this, op);
+    }
+
     public Matrix2 mul(float s) {
         return apply(new MulOp(s));
     }
@@ -190,6 +195,14 @@ public class Matrix2 {
     
     public Matrix2 lower(float v) {
         return apply(new LowerOp(v));
+    }
+
+    public Matrix2 eq(float v, float epsilon) {
+        return apply(new EqualsOp(v, epsilon));
+    }
+
+    public Matrix2 eq(float v) {
+        return eq(v, EPSILON);
     }
     
     public Matrix2 pow(float s) {
@@ -248,20 +261,20 @@ public class Matrix2 {
         return Matrix2.sum(this);
     }
 
-    public Matrix2 maxRows() {
-        return Matrix2.maxRows(this);
+    public Matrix2 maxPerRow() {
+        return Matrix2.maxPerRow(this);
     }
 
-    public Matrix2 maxColumns() {
-        return Matrix2.maxColumns(this);
+    public Matrix2 maxPerColumn() {
+        return Matrix2.maxPerColumn(this);
     }
 
-    public Matrix2 minRows() {
-        return Matrix2.minRows(this);
+    public Matrix2 minPerRow() {
+        return Matrix2.minPerRow(this);
     }
 
-    public Matrix2 minColumns() {
-        return Matrix2.minColumns(this);
+    public Matrix2 minPerColumn() {
+        return Matrix2.minPerColumn(this);
     }
 
     public float max() {
@@ -384,22 +397,10 @@ public class Matrix2 {
         return sum;
     }
 
-    public static Matrix2 maxColumns(Matrix2 m) {
-        Matrix2 r = new Matrix2(m.rows, 1);
-        for (int row = 0; row < m.rows; row++) {
-            float max = Float.MIN_VALUE;
-            for (int col = 0; col < m.cols; col++) {
-                max = Math.max(max, m.get(row, col));
-            }
-            r.set(row, 0, max);
-        }
-        return r;
-    }
-
-    public static Matrix2 maxRows(Matrix2 m) {
+    public static Matrix2 maxPerColumn(Matrix2 m) {
         Matrix2 r = new Matrix2(1, m.cols);
         for (int col = 0; col < m.cols; col++) {
-            float max = Float.MIN_VALUE;
+            float max = Float.NEGATIVE_INFINITY;
             for (int row = 0; row < m.rows; row++) {
                 max = Math.max(max, m.get(row, col));
             }
@@ -408,22 +409,22 @@ public class Matrix2 {
         return r;
     }
 
-    public static Matrix2 minColumns(Matrix2 m) {
+    public static Matrix2 maxPerRow(Matrix2 m) {
         Matrix2 r = new Matrix2(m.rows, 1);
         for (int row = 0; row < m.rows; row++) {
-            float min = Float.MAX_VALUE;
+            float max = Float.NEGATIVE_INFINITY;
             for (int col = 0; col < m.cols; col++) {
-                min = Math.min(min, m.get(row, col));
+                max = Math.max(max, m.get(row, col));
             }
-            r.set(row, 0, min);
+            r.set(row, 0, max);
         }
         return r;
     }
 
-    public static Matrix2 minRows(Matrix2 m) {
+    public static Matrix2 minPerColumn(Matrix2 m) {
         Matrix2 r = new Matrix2(1, m.cols);
         for (int col = 0; col < m.cols; col++) {
-            float min = Float.MAX_VALUE;
+            float min = Float.POSITIVE_INFINITY;
             for (int row = 0; row < m.rows; row++) {
                 min = Math.min(min, m.get(row, col));
             }
@@ -432,8 +433,20 @@ public class Matrix2 {
         return r;
     }
 
+    public static Matrix2 minPerRow(Matrix2 m) {
+        Matrix2 r = new Matrix2(m.rows, 1);
+        for (int row = 0; row < m.rows; row++) {
+            float min = Float.POSITIVE_INFINITY;
+            for (int col = 0; col < m.cols; col++) {
+                min = Math.min(min, m.get(row, col));
+            }
+            r.set(row, 0, min);
+        }
+        return r;
+    }
+
     public static float max(Matrix2 m) {
-        float max = Float.MIN_VALUE;
+        float max = Float.NEGATIVE_INFINITY;
         for (int row = 0; row < m.rows; row++) {
             for (int col = 0; col < m.cols; col++) {
                 max = Math.max(max, m.get(row, col));
@@ -443,7 +456,7 @@ public class Matrix2 {
     }
 
     public static float min(Matrix2 m) {
-        float min = Float.MAX_VALUE;
+        float min = Float.POSITIVE_INFINITY;
         for (int row = 0; row < m.rows; row++) {
             for (int col = 0; col < m.cols; col++) {
                 min = Math.min(min, m.get(row, col));
@@ -470,6 +483,31 @@ public class Matrix2 {
         for (int row = 0; row < a.rows; row++) {
             for (int col = 0; col < a.cols; col++) {
                 r.set(row, col, op.apply(a.get(row, col), b.get(row, col)));
+            }
+        }
+        return r;
+    }
+
+    public static Matrix2 apply(Matrix2 m, ElementWiseBoolOp op) {
+        Matrix2 r = m.emptyCopy();
+        for (int row = 0; row < m.rows; row++) {
+            for (int col = 0; col < m.cols; col++) {
+                boolean result = op.apply(m.get(row, col));
+                r.set(row, col, result ? 1f : 0f);
+            }
+        }
+        return r;
+    }
+
+    public static Matrix2 apply(Matrix2 a, Matrix2 b, ElementWiseBoolMat2Op op) {
+        if(!sameShape(a, b))
+            error("Invalid shapes, a: " + a + ", b: " + b);
+
+        Matrix2 r = a.emptyCopy();
+        for (int row = 0; row < a.rows; row++) {
+            for (int col = 0; col < a.cols; col++) {
+                boolean result = op.apply(a.get(row, col), b.get(row, col));
+                r.set(row, col, result ? 1f : 0f);
             }
         }
         return r;
@@ -515,7 +553,23 @@ public class Matrix2 {
     public static Matrix2 divEW(Matrix2 a, Matrix2 b) {
         return Matrix2.apply(a, b, DivMatEWOp.INSTANCE);
     }
-    
+
+    public static Matrix2 greaterEW(Matrix2 a, Matrix2 b) {
+        return Matrix2.apply(a, b, GreaterMatOp.INSTANCE);
+    }
+
+    public static Matrix2 lowerEW(Matrix2 a, Matrix2 b) {
+        return Matrix2.apply(a, b, LowerMatOp.INSTANCE);
+    }
+
+    public static Matrix2 eqEW(Matrix2 a, Matrix2 b) {
+        return Matrix2.apply(a, b, EqualsMatOp.INSTANCE);
+    }
+
+    public static Matrix2 eqEW(Matrix2 a, Matrix2 b, float epsilon) {
+        return Matrix2.apply(a, b, new EqualsMatOp(epsilon));
+    }
+
     public static Matrix2 transpose(Matrix2 m) {
         Matrix2 t = new Matrix2(m.cols, m.rows);
         for (int row = 0; row < m.rows; row++) {
@@ -656,27 +710,7 @@ public class Matrix2 {
             return v / s;
         }
     }
-    
-    public static class GreaterOp extends ScalarOp {
-        public GreaterOp(float s) {
-            super(s);
-        }
-        @Override
-        public float apply(float v) {
-            return v > s ? 1f : 0f;
-        }
-    }
-    
-    public static class LowerOp extends ScalarOp {
-        public LowerOp(float s) {
-            super(s);
-        }
-        @Override
-        public float apply(float v) {
-            return v < s ? 1f : 0f;
-        }
-    }
-    
+
     public static class PowerOp extends ScalarOp {
         public static final ElementWiseOp SQ_INSTANCE = new PowerOp(2);
         public PowerOp(float s) {
@@ -776,6 +810,90 @@ public class Matrix2 {
         @Override
         public float apply(float a, float b) {
             return a / b;
+        }
+    }
+
+
+    /**
+     * Element wise boolean operation for a matrix
+     */
+    public interface ElementWiseBoolOp {
+        boolean apply(float v);
+    }
+
+    public static abstract class ScalarBoolOp implements ElementWiseBoolOp {
+        protected final float s;
+        public ScalarBoolOp(float s) {
+            this.s = s;
+        }
+    }
+
+    public static class GreaterOp extends ScalarBoolOp {
+        public GreaterOp(float s) {
+            super(s);
+        }
+        @Override
+        public boolean apply(float v) {
+            return v > s;
+        }
+    }
+
+    public static class LowerOp extends ScalarBoolOp {
+        public LowerOp(float s) {
+            super(s);
+        }
+        @Override
+        public boolean apply(float v) {
+            return v < s;
+        }
+    }
+
+    public static class EqualsOp implements ElementWiseBoolOp {
+        private final float epsilon;
+        private final float s;
+        public EqualsOp(float s, float epsilon) {
+            this.epsilon = epsilon;
+            this.s = s;
+        }
+        @Override
+        public boolean apply(float v) {
+            return Math.abs(v - s) < epsilon;
+        }
+    }
+
+
+    /**
+     * Element wise boolean operation for two matrices
+     */
+    public interface ElementWiseBoolMat2Op {
+        boolean apply(float a, float b);
+    }
+
+    public static class GreaterMatOp implements ElementWiseBoolMat2Op {
+        public static final ElementWiseBoolMat2Op INSTANCE = new GreaterMatOp();
+        @Override
+        public boolean apply(float a, float b) {
+            return a > b;
+        }
+    }
+
+    public static class LowerMatOp implements ElementWiseBoolMat2Op {
+        public static final ElementWiseBoolMat2Op INSTANCE = new LowerMatOp();
+        @Override
+        public boolean apply(float a, float b) {
+            return a < b;
+        }
+    }
+
+    public static class EqualsMatOp implements ElementWiseBoolMat2Op {
+        public static final ElementWiseBoolMat2Op INSTANCE = new EqualsMatOp(EPSILON);
+        private final float epsilon;
+        public EqualsMatOp(float epsilon) {
+            this.epsilon = epsilon;
+        }
+        @Override
+        public boolean apply(float a, float b) {
+            return Math.abs(a - b) < epsilon;
         }
     }
     
