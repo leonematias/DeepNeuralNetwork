@@ -36,6 +36,11 @@ public class SampleItem {
         return new Matrix2(this.label);
     }
 
+    public Matrix2 toYoneHot(int labels) {
+        float[] oneHotVec = MLUtils.oneHotVec(this.label, labels);
+        return Matrix2.columnVec(oneHotVec);
+    }
+
     public static Matrix2 toX(List<SampleItem> items) {
         List<Matrix2> list = new ArrayList<>(items.size());
         for (SampleItem item : items) {
@@ -48,6 +53,14 @@ public class SampleItem {
         List<Matrix2> list = new ArrayList<>(items.size());
         for (SampleItem item : items) {
             list.add(item.toY());
+        }
+        return Matrix2.appendColumns(list);
+    }
+
+    public static Matrix2 toYoneHot(List<SampleItem> items, int labels) {
+        List<Matrix2> list = new ArrayList<>(items.size());
+        for (SampleItem item : items) {
+            list.add(item.toYoneHot(labels));
         }
         return Matrix2.appendColumns(list);
     }

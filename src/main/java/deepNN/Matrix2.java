@@ -67,6 +67,14 @@ public class Matrix2 {
     public static Matrix2 random(int rows, int cols, long randSeed) {
         return new Matrix2(rows, cols).apply(new RandomOp(randSeed));
     }
+
+    public static Matrix2 columnVec(float[] values) {
+        Matrix2 m = new Matrix2(values.length, 1);
+        for (int row = 0; row < m.rows; row++) {
+            m.set(row, 0, values[row]);
+        }
+        return m;
+    }
     
     
     /*-------------------------- Internal methods --------------------------*/
@@ -240,6 +248,30 @@ public class Matrix2 {
         return Matrix2.sum(this);
     }
 
+    public Matrix2 maxRows() {
+        return Matrix2.maxRows(this);
+    }
+
+    public Matrix2 maxColumns() {
+        return Matrix2.maxColumns(this);
+    }
+
+    public Matrix2 minRows() {
+        return Matrix2.minRows(this);
+    }
+
+    public Matrix2 minColumns() {
+        return Matrix2.minColumns(this);
+    }
+
+    public float max() {
+        return Matrix2.max(this);
+    }
+
+    public float min() {
+        return Matrix2.min(this);
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(this.data.length * 2);
@@ -306,7 +338,7 @@ public class Matrix2 {
     }
     
     public static Matrix2 broadcastRow(Matrix2 m, int rows) {
-        if(m.rows == 1)
+        if(m.rows > 1)
             error("Broadcast not supported for more than 1 row");
         if(rows < 1)
             error("Invalid broadcast number: " + rows);

@@ -1,6 +1,7 @@
 package utils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -26,14 +27,34 @@ public abstract class MLUtils {
     }
 
     public static void splitDataSet(List<SampleItem> items, float splitPercentage, long randSeed, List<SampleItem> out1, List<SampleItem> out2) {
+        splitDataSet(SampleItem.toMap(items), splitPercentage, randSeed, out1, out2);
+    }
+
+    public static void splitDataSet(Map<Integer, List<SampleItem>> itemsPerLabel, float splitPercentage, long randSeed, List<SampleItem> out1, List<SampleItem> out2) {
         Random rand = new Random(randSeed);
-        for (SampleItem item : items) {
-            if(rand.nextFloat() < splitPercentage) {
-                out1.add(item);
-            } else {
-                out2.add(item);
+        for (int label : itemsPerLabel.keySet()) {
+            for (SampleItem item : itemsPerLabel.get(label)) {
+                if(rand.nextFloat() < splitPercentage) {
+                    out1.add(item);
+                } else {
+                    out2.add(item);
+                }
             }
         }
+    }
+
+    public static int minSamplesCount(Map<Integer, List<SampleItem>> itemsPerLabel) {
+        int min = Integer.MAX_VALUE;
+        for (List<SampleItem> items : itemsPerLabel.values()) {
+            min = Math.min(min, items.size());
+        }
+        return min;
+    }
+
+    public static float[] oneHotVec(int label, int totalLabels) {
+        float[] vec = new float[totalLabels];
+        vec[label] = 1;
+        return vec;
     }
 
 

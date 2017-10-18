@@ -8,6 +8,15 @@ import java.util.List;
 
 public class MnistLoader {
 
+    public final static int MNIST_IMG_WIDTH = 20;
+    public final static int MNIST_IMG_HEIGHT = 20;
+
+    public static List<SampleItem> loadMnistData() {
+        String xPath = "data/mnist_input_images.csv";
+        String yPath = "data/mnist_input_classification.csv";
+        return MnistLoader.loadMnistData(xPath, yPath);
+    }
+
     public static List<SampleItem> loadMnistData(String xPath, String yPath) {
         List<SampleItem> list = new ArrayList<>();
 

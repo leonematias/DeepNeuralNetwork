@@ -5,6 +5,13 @@
  */
 package deepNN;
 
+import deepNN.activation.ActivationFunction;
+import deepNN.activation.ReluFunction;
+import deepNN.activation.SigmoidFunction;
+import deepNN.activation.SoftmaxFunction;
+import deepNN.loss.BinaryCrossEntropyLoss;
+import deepNN.loss.LossFunction;
+import deepNN.loss.MultiClassCrossEntropyLoss;
 import utils.MLUtils;
 
 import java.util.ArrayList;
@@ -18,22 +25,36 @@ import java.util.Map;
  * @author Matias Leone
  */
 public class DeepNeuralNetwork {
-    
+
+    public static final ActivationFunction RELU = new ReluFunction();
+    public static final ActivationFunction SIGMOID = new SigmoidFunction();
+    public static final ActivationFunction SOFTMAX = new SoftmaxFunction();
+    public static final LossFunction BINARY_CROSS_ENTROPY = new BinaryCrossEntropyLoss();
+    public static final LossFunction MULTI_CLASS_CROSS_ENTROPY = new MultiClassCrossEntropyLoss();
+
     private final int[] layerDims;
     private final long randSeed;
     private final int miniBatchSize;
     private final int iterations;
     private final float learningRate;
     private final float lambda;
+    private final ActivationFunction hiddenActivationFunc;
+    private final ActivationFunction outputActivationFunc;
+    private final LossFunction lossFunction;
     private Map<String, Matrix2> parameters;
     
-    public DeepNeuralNetwork(long randSeed, int[] layerDims, int miniBatchSize, int iterations, float learningRate, float lambda) {
+    public DeepNeuralNetwork(long randSeed, int[] layerDims, int miniBatchSize, int iterations, float learningRate,
+                             float lambda, ActivationFunction hiddenActivationFunc, ActivationFunction outputActivationFunc,
+                             LossFunction lossFunction) {
         this.layerDims = layerDims;
         this.randSeed = randSeed;
         this.miniBatchSize = miniBatchSize;
         this.iterations = iterations;
         this.learningRate = learningRate;
         this.lambda = lambda;
+        this.hiddenActivationFunc = hiddenActivationFunc;
+        this.outputActivationFunc = outputActivationFunc;
+        this.lossFunction = lossFunction;
     }
 
     public void train(Matrix2 X, Matrix2 Y, boolean printCost) {
@@ -59,13 +80,13 @@ public class DeepNeuralNetwork {
                 caches.clear();
                 
                 //Forward propagation
-                Matrix2 AL = modelForward(miniBatch.X, this.parameters, caches);
+                Matrix2 AL = modelForward(miniBatch.X, this.parameters, caches, this.hiddenActivationFunc, this.outputActivationFunc);
 
                 //Compute cost
-                cost = computeCost(AL, miniBatch.Y, this.lambda, this.parameters);
+                cost = computeCost(AL, miniBatch.Y, this.lambda, this.parameters, this.lossFunction);
 
                 //Backward propagation
-                grads = modelBackward(AL, miniBatch.Y, caches, grads, this.lambda);
+                grads = modelBackward(AL, miniBatch.Y, caches, grads, this.lambda, this.lossFunction, this.hiddenActivationFunc, this.outputActivationFunc);
 
                 //Update parameters
                 updateParameters(this.parameters, grads, this.learningRate);
@@ -87,7 +108,7 @@ public class DeepNeuralNetwork {
     public Matrix2 predict(Matrix2 X) {
         List<CacheItem> caches = new ArrayList<>();
         
-        Matrix2 AL = modelForward(X, parameters, caches);
+        Matrix2 AL = modelForward(X, parameters, caches, this.hiddenActivationFunc, this.outputActivationFunc);
         
         //AL > 0.5
         return AL.greater(0.5f);
@@ -116,23 +137,24 @@ public class DeepNeuralNetwork {
      * Forward propagation for all layers.
      * Compute AL and store intermediate values in caches
      */
-    private Matrix2 modelForward(Matrix2 X, Map<String, Matrix2> parameters, List<CacheItem> caches) {
+    private Matrix2 modelForward(Matrix2 X, Map<String, Matrix2> parameters, List<CacheItem> caches,
+                                 ActivationFunction hiddenActivation, ActivationFunction outputActivation) {
         Matrix2 A = X;
         int L = parameters.size() / 2;
         
-        //Linear-Relu pass for all layers except the last one
+        //Linear-Activation pass for all layers except the last one
         for (int l = 1; l < L; l++) {
             Matrix2 Aprev = A;
             String layerIdx = String.valueOf(l);
             Matrix2 W = parameters.get("W" + layerIdx);
             Matrix2 b = parameters.get("b" + layerIdx);
-            A = linearActivationForward(Aprev, W, b, Matrix2.ReluOp.INSTANCE, caches);
+            A = linearActivationForward(Aprev, W, b, hiddenActivation, caches);
         }
         
-        //Linear-Sigmoid for last layer
+        //Linear-Activation for last layer
         Matrix2 WL = parameters.get("W" + L);
         Matrix2 bL = parameters.get("b" + L);
-        Matrix2 AL = linearActivationForward(A, WL, bL, Matrix2.SigmoidOp.INSTANCE, caches);
+        Matrix2 AL = linearActivationForward(A, WL, bL, outputActivation, caches);
         
         return AL;
     }
@@ -140,11 +162,11 @@ public class DeepNeuralNetwork {
     /**
      * Activation and linear forward pass: A = g(Z)
      */
-    private Matrix2 linearActivationForward(Matrix2 A_prev, Matrix2 W, Matrix2 b, Matrix2.ElementWiseOp activation, List<CacheItem> caches) {
+    private Matrix2 linearActivationForward(Matrix2 A_prev, Matrix2 W, Matrix2 b, ActivationFunction activation, List<CacheItem> caches) {
         Matrix2 Z = linearForward(A_prev, W, b);
         LinearCache linearCache = new LinearCache(A_prev, W, b);
         
-        Matrix2 A = Z.apply(activation);
+        Matrix2 A = activation.forward(Z);
         ActivationCache activationCache = new ActivationCache(Z);
         
         caches.add(new CacheItem(linearCache, activationCache));
@@ -164,15 +186,12 @@ public class DeepNeuralNetwork {
     /**
      * Compute loss
      */
-    private float computeCost(Matrix2 AL, Matrix2 Y, float lambda, Map<String, Matrix2> parameters) {
+    private float computeCost(Matrix2 AL, Matrix2 Y, float lambda, Map<String, Matrix2> parameters, LossFunction lossFunction) {
         int m = Y.cols();
         int L = parameters.size() / 2;
-        
-        //Cross-entropy cost = -1/m * sum(Y * log(AL) + (1-Y) * log(1-AL))
-        float crossEntropyCost = Matrix2.add(
-                Matrix2.mulEW(Y, AL.log()), 
-                Matrix2.mulEW(Y.oneMinus(), AL.oneMinus().log())
-        ).sumColumns().mul(-1f/m).get(0,0);
+
+        //Use loss function to compute cost
+        float crossEntropyCost = lossFunction.computeCost(Y, AL);
         
         //L2 regularization cost: lambda/2m * (sum(W1^2) + sum(W2^2) + ... + (WL^2))
         float l2RegCost = 0;
@@ -191,30 +210,31 @@ public class DeepNeuralNetwork {
     /**
      * Backward propagation for all layers
      */
-    private Map<String, Matrix2> modelBackward(Matrix2 AL, Matrix2 Y, List<CacheItem> caches, Map<String, Matrix2> grads, float lambda) {
-        int m = Y.cols();
+    private Map<String, Matrix2> modelBackward(Matrix2 AL, Matrix2 Y, List<CacheItem> caches, Map<String, Matrix2> grads,
+                                               float lambda, LossFunction lossFunction, ActivationFunction hiddenActivation,
+                                               ActivationFunction outputActivation) {
         int L = caches.size();
         CacheItem cache;
         String layerIdx;
         BackpropResult res;
 
-        //Cross-entropy loss derivative: dAL = - ((Y / AL) - ((1-Y) / (1-AL)))
-        Matrix2 dAL = Matrix2.divEW(Y, AL).sub(Matrix2.divEW(Y.oneMinus(), AL.oneMinus())).mul(-1f);
+        //Compute loss function gradient
+        Matrix2 dAL = lossFunction.computeCostGradient(Y, AL);
 
-        //Compute sigmoid gradient for output layer
+        //Compute gradient for output layer
         cache = caches.get(L - 1);
-        res = linearActivationBackward(dAL, cache, SigmoidBackward.INSTANCE, lambda);
+        res = linearActivationBackward(dAL, cache, outputActivation, lambda);
         layerIdx = String.valueOf(L);
         grads.put("dA" + layerIdx, res.dA);
         grads.put("dW" + layerIdx, res.dW);
         grads.put("db" + layerIdx, res.db);
         
-        //Compute relu gradients for all other layers
+        //Compute gradients for all other layers
         for (int l = L - 2; l >= 0; l--) {
             layerIdx = String.valueOf(l + 1);
             cache = caches.get(l);
             Matrix2 dA_current = grads.get("dA" + (l + 2));
-            res = linearActivationBackward(dA_current, cache, ReluBackward.INSTANCE, lambda);
+            res = linearActivationBackward(dA_current, cache, hiddenActivation, lambda);
             grads.put("dA" + layerIdx, res.dA);
             grads.put("dW" + layerIdx, res.dW);
             grads.put("db" + layerIdx, res.db);
@@ -223,8 +243,8 @@ public class DeepNeuralNetwork {
         return grads;
     }
     
-    private BackpropResult linearActivationBackward(Matrix2 dA, CacheItem cache, BackwardOp activation, float lambda) {
-        Matrix2 dZ = activation.apply(dA, cache.activationCache);    
+    private BackpropResult linearActivationBackward(Matrix2 dA, CacheItem cache, ActivationFunction activation, float lambda) {
+        Matrix2 dZ = activation.backward(dA, cache.activationCache.Z);
         return linearBackward(dZ, cache.linearCache, lambda); 
     }
     

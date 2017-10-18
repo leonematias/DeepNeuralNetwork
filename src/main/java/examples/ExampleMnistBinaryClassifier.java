@@ -22,9 +22,6 @@ import java.util.Map;
  * @author matias.leone
  */
 public class ExampleMnistBinaryClassifier {
- 
-    private final static int MNIST_IMG_WIDTH = 20;
-    private final static int MNIST_IMG_HEIGHT = 20;
     
     public static void main(String[] args) {
         new ExampleMnistBinaryClassifier().run();
@@ -34,20 +31,13 @@ public class ExampleMnistBinaryClassifier {
         long randSeed = 12345;
         
         //Load data
-        String xPath = "data/mnist_input_images.csv";
-        String yPath = "data/mnist_input_classification.csv";
-        List<SampleItem> allImageData = MnistLoader.loadMnistData(xPath, yPath);
+        List<SampleItem> allImageData = MnistLoader.loadMnistData();
         
-        //Pick 0 and 1 images (same amount from both)
+        //Pick 0 and 1 images
         Map<Integer, List<SampleItem>> imageMap = SampleItem.toMap(allImageData);
-        List<SampleItem> zeroImages = imageMap.get(0);
-        List<SampleItem> oneImages = imageMap.get(1);
-        int minSampleSize = Math.min(zeroImages.size(), oneImages.size());
-        List<SampleItem> digitImages = new ArrayList<>(minSampleSize * 2);
-        for (int i = 0; i < minSampleSize; i++) {
-            digitImages.add(zeroImages.get(i));
-            digitImages.add(oneImages.get(i));
-        }
+        List<SampleItem> digitImages = new ArrayList<>();
+        digitImages.addAll(imageMap.get(0));
+        digitImages.addAll(imageMap.get(1));
         
         
         //Split train and test set
@@ -65,11 +55,14 @@ public class ExampleMnistBinaryClassifier {
         //Train binary classifier with layers [400, 25, 10, 1]
         DeepNeuralNetwork classifier = new DeepNeuralNetwork(
                 randSeed,
-                new int[]{MNIST_IMG_WIDTH * MNIST_IMG_HEIGHT, 25, 10, 1}, //network layers
+                new int[]{MnistLoader.MNIST_IMG_WIDTH * MnistLoader.MNIST_IMG_HEIGHT, 25, 10, 1}, //network layers
                 128, //mini-batch size
                 1000, //epochs
                 0.075f, //learning rate
-                0.7f //L2 lambda regularization
+                0.7f, //L2 lambda regularization,
+                DeepNeuralNetwork.RELU, //Hidden layers activation function
+                DeepNeuralNetwork.SIGMOID, //Output layer activation function
+                DeepNeuralNetwork.BINARY_CROSS_ENTROPY //Loss function
         );
         classifier.train(trainX, trainY, true);
         

@@ -11,13 +11,20 @@ public class SoftmaxFunction implements ActivationFunction {
 
     @Override
     public Matrix2 forward(Matrix2 Z) {
-        //A = exp(Z) / (1 + sum(exp(Z)))
-        Matrix2 expZ = Z.exp();
-        return expZ.div(1f + expZ.sum());
+        //A = exp(Z - Max) / (sum(exp(Z - Max)))
+        Matrix2 max = Z.maxRows().broadcastRow(Z.rows());
+        Matrix2 expZ = Z.sub(max).exp();
+        return expZ.div(expZ.sum());
     }
 
     @Override
     public Matrix2 backward(Matrix2 dA, Matrix2 Z) {
-        return null;
+        //S = softmax(Z)
+        Matrix2 S = forward(Z);
+
+        //dZ = dA * S * (1 - S)
+        Matrix2 dZ = dA.mulEW(S).mulEW(S.oneMinus());
+
+        return dZ;
     }
 }
