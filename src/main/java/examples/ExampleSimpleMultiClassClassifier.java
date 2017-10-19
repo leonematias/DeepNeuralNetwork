@@ -34,7 +34,7 @@ public class ExampleSimpleMultiClassClassifier {
         //Small network test case
         List<SampleItem> trainSet = new ArrayList<>();
         Random rand = new Random(randSeed);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             float px = -1 + rand.nextFloat() * 2;
             float py = -1 + rand.nextFloat() * 2;
             int label = (px < 0 ? 0 : 1) + (py < 0 ? 0 : 2);
@@ -68,11 +68,11 @@ public class ExampleSimpleMultiClassClassifier {
         //Train binary classifier
         DeepNeuralNetwork classifier = new DeepNeuralNetwork(
                 randSeed,
-                new int[]{2, 10, labelsCount}, //network layers
+                new int[]{2, 10, 10, labelsCount}, //network layers
                 128, //mini-batch size
-                1000, //epochs
+                4000, //epochs
                 0.075f, //learning rate
-                0.7f, //L2 lambda regularization
+                0, //L2 lambda regularization
                 DeepNeuralNetwork.RELU, //Hidden layers activation function
                 DeepNeuralNetwork.SOFTMAX, //Output layer activation function
                 DeepNeuralNetwork.MULTI_CLASS_CROSS_ENTROPY //Loss function

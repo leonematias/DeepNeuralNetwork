@@ -15,7 +15,7 @@ import java.util.Random;
 public class Matrix2 {
     
     private static final NumberFormat FORMAT = new DecimalFormat("0.####");
-    public static final float EPSILON = 0.0001f;
+    public static final float EPSILON = 0.000001f;
     
     private final float[] data;
     private final int rows;
@@ -283,6 +283,14 @@ public class Matrix2 {
 
     public float min() {
         return Matrix2.min(this);
+    }
+
+    public Matrix2 clamp(float v) {
+        return apply(new ClampOp(v));
+    }
+
+    public Matrix2 clampToZero() {
+        return apply(ClampOp.CLAMP_ZERO);
     }
 
     @Override
@@ -773,6 +781,18 @@ public class Matrix2 {
             return (float)Math.exp(v);
         }
     }
+
+    public static class ClampOp extends ScalarOp {
+        public static final ElementWiseOp CLAMP_ZERO = new ClampOp(EPSILON);
+        public ClampOp(float s) {
+            super(s);
+        }
+        @Override
+        public float apply(float v) {
+            return Math.max(v, s);
+        }
+    }
+
     
     /**
      * Element wise operation between two matrix

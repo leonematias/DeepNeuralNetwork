@@ -10,22 +10,9 @@ public class MultiClassCrossEntropyLoss implements LossFunction {
     @Override
     public float computeCost(Matrix2 Y, Matrix2 AL) {
         int m = Y.cols();
-        /*
-        int K = Y.rows();
-
-        //Cost = -1/m * sum(-Y_k * log(AL_k))
-        float cost = 0;
-        for (int k = 0; k < K; k++) {
-            Matrix2 Yk = Matrix2.getRow(Y, k);
-            Matrix2 ALk = Matrix2.getRow(AL, k);
-            cost += Yk.mulEW(ALk.log()).sum();
-        }
-        cost *= -1f/m;
-        */
-
 
         //Cost = -1/m * sum(Y * log(AL))
-        float cost = -1f/m * Y.mulEW(AL.log()).sum();
+        float cost = -1f/m * Y.mulEW(AL.clampToZero().log()).sum();
 
         return cost;
     }
