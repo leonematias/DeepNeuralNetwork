@@ -6,8 +6,8 @@ Based on guidelines by Andrew NG in his Deep Learning specialization at Cousera.
 
 Features:
 * Muli-layer network, the number of layers is configurable.
-* Binary classification.
-* RELU as activation function for hidden layers and Sigmoid for output layer.
+* Binary and Multi-class classification.
+* RELU as activation function for hidden layers and Sigmoid/Softmax for output layer.
 * Vectorized implementation.
 * L2 regularization.
 * Gradient descent with mini-batches.
