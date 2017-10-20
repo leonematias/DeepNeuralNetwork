@@ -30,8 +30,15 @@ public class ExampleSimpleMultiClassClassifier {
     private void run() {
         long randSeed = 12345;
         int labelsCount = 4;
+        int samplesCount = 10000;
 
-        //Small network test case
+        /**
+         * Create N random points between (-1, 1) distributed in 4 groups, one for each quadrant:
+         * 0: x < 0, y < 0
+         * 1: x > 0, y < 0
+         * 2: x < 0, y > 0
+         * 3: x > 0, y > 0
+         */
         List<SampleItem> trainSet = new ArrayList<>();
         Random rand = new Random(randSeed);
         for (int i = 0; i < 10000; i++) {
@@ -40,20 +47,27 @@ public class ExampleSimpleMultiClassClassifier {
             int label = (px < 0 ? 0 : 1) + (py < 0 ? 0 : 2);
             trainSet.add(new SampleItem(new float[]{px, py}, label));
         }
+
+        //Test set: a few samples of each group
         List<SampleItem> testSet = new ArrayList<>(Arrays.asList(
+                //0: x < 0, y < 0
                 new SampleItem(new float[]{-0.1f, -1}, 0),
                 new SampleItem(new float[]{-0.3f, -0.4f}, 0),
 
+                //1: x > 0, y < 0
                 new SampleItem(new float[]{0.1f, -0.7f}, 1),
                 new SampleItem(new float[]{0.3f, -0.9f}, 1),
 
+                //2: x < 0, y > 0
                 new SampleItem(new float[]{-0.1f, 1}, 2),
                 new SampleItem(new float[]{-0.3f, 0.4f}, 2),
 
+                //3: x > 0, y > 0
                 new SampleItem(new float[]{0.1f, 0.7f}, 3),
                 new SampleItem(new float[]{0.3f, 0.9f}, 3)
         ));
 
+        //Print distribution of samples in both sets
         System.out.println("Train set diversity:");
         MLUtils.printSamplesDiversity(trainSet);
         System.out.println("Test set diversity:");
@@ -70,9 +84,9 @@ public class ExampleSimpleMultiClassClassifier {
                 randSeed,
                 new int[]{2, 10, 10, labelsCount}, //network layers
                 128, //mini-batch size
-                4000, //epochs
+                2000, //epochs
                 0.075f, //learning rate
-                0, //L2 lambda regularization
+                0.015f, //L2 lambda regularization
                 DeepNeuralNetwork.RELU, //Hidden layers activation function
                 DeepNeuralNetwork.SOFTMAX, //Output layer activation function
                 DeepNeuralNetwork.MULTI_CLASS_CROSS_ENTROPY //Loss function
@@ -82,8 +96,6 @@ public class ExampleSimpleMultiClassClassifier {
         //Predict train and test set
         Matrix2 trainYpred = classifier.predict(trainX);
         Matrix2 testYpred = classifier.predict(testX);
-        //PredictionStats trainStats = new PredictionStats(trainY, trainYpred);
-        //PredictionStats testStats = new PredictionStats(testY, testYpred);
         System.out.println("Train set performance: " + PredictionStats.computeAccuracy(trainY, trainYpred) * 100f);
         System.out.println("Test set performance: " + PredictionStats.computeAccuracy(testY, testYpred) * 100f);
         

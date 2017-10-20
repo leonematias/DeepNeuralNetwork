@@ -29,7 +29,7 @@ public class ExampleMnistMultiClassClassifier {
     private void run() {
         long randSeed = 12345;
         
-        //Load data
+        //Load Mnist data
         int labelsCount = 10;
         List<SampleItem> allImageData = MnistLoader.loadMnistData();
         
@@ -38,6 +38,7 @@ public class ExampleMnistMultiClassClassifier {
         List<SampleItem> testSet = new ArrayList<>();
         MLUtils.splitDataSet(allImageData, 0.7f, randSeed, trainSet, testSet);
 
+        //Print samples distribution in both sets
         System.out.println("Train set diversity:");
         MLUtils.printSamplesDiversity(trainSet);
         System.out.println("Test set diversity:");
@@ -53,10 +54,10 @@ public class ExampleMnistMultiClassClassifier {
         DeepNeuralNetwork classifier = new DeepNeuralNetwork(
                 randSeed,
                 new int[]{MnistLoader.MNIST_IMG_WIDTH * MnistLoader.MNIST_IMG_HEIGHT, 25, 10, labelsCount}, //network layers
-                64, //mini-batch size
-                1000, //epochs
+                128, //mini-batch size
+                3000, //epochs
                 0.075f, //learning rate
-                0.7f, //L2 lambda regularization,
+                0, //L2 lambda regularization,
                 DeepNeuralNetwork.RELU, //Hidden layers activation function
                 DeepNeuralNetwork.SOFTMAX, //Output layer activation function
                 DeepNeuralNetwork.MULTI_CLASS_CROSS_ENTROPY //Loss function
@@ -66,8 +67,6 @@ public class ExampleMnistMultiClassClassifier {
         //Predict train and test set
         Matrix2 trainYpred = classifier.predict(trainX);
         Matrix2 testYpred = classifier.predict(testX);
-        //PredictionStats trainStats = new PredictionStats(trainY, trainYpred);
-        //PredictionStats testStats = new PredictionStats(testY, testYpred);
         System.out.println("Train set performance: " + PredictionStats.computeAccuracy(trainY, trainYpred) * 100f);
         System.out.println("Test set performance: " + PredictionStats.computeAccuracy(testY, testYpred) * 100f);
 

@@ -3,6 +3,8 @@ package deepNN.loss;
 import deepNN.Matrix2;
 
 /**
+ * Binary cross entropy loss function
+ *
  * Created by matias.leone on 10/18/17.
  */
 public class BinaryCrossEntropyLoss implements LossFunction {
@@ -13,8 +15,8 @@ public class BinaryCrossEntropyLoss implements LossFunction {
 
         //Cross-entropy cost = -1/m * sum(Y * log(AL) + (1-Y) * log(1-AL))
         float cost = Matrix2.add(
-                Matrix2.mulEW(Y, AL.log()),
-                Matrix2.mulEW(Y.oneMinus(), AL.oneMinus().log())
+                Matrix2.mulEW(Y, AL.clampToZero().log()),
+                Matrix2.mulEW(Y.oneMinus(), AL.oneMinus().clampToZero().log())
         ).sumColumns().mul(-1f/m).get(0,0);
 
         return cost;

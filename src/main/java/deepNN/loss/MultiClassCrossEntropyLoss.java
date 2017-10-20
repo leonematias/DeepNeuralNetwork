@@ -3,6 +3,8 @@ package deepNN.loss;
 import deepNN.Matrix2;
 
 /**
+ * Multi-class cross entropy loss function
+ *
  * Created by matias.leone on 10/18/17.
  */
 public class MultiClassCrossEntropyLoss implements LossFunction {

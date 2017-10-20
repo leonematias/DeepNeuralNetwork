@@ -8,7 +8,9 @@ import java.util.Random;
 
 /**
  * A nxm float immutable matrix.
- * Operations are not optimized (for acadamedic purposes only)
+ * Operations are not optimized (for academic purposes only)
+ * Data is stored in a single float array, one row after the other.
+ * All operations are immutable and they always create a new matrix.
  * 
  * @author Matias Leone
  */

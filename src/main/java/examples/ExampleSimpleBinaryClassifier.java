@@ -7,6 +7,7 @@ package examples;
 
 import deepNN.DeepNeuralNetwork;
 import deepNN.Matrix2;
+import utils.MLUtils;
 import utils.PredictionStats;
 import utils.SampleItem;
 
@@ -28,23 +29,38 @@ public class ExampleSimpleBinaryClassifier {
     
     private void run() {
         long randSeed = 12345;
+        int samplesCount = 10000;
 
-        //Small network test case
+        /**
+         * Create N random points between (-1, 1) distributed in 2 groups:
+         * 0: x < 0
+         * 1: x > 0
+         */
         List<SampleItem> trainSet = new ArrayList<>();
         Random rand = new Random(randSeed);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < samplesCount; i++) {
             float px = -1 + rand.nextFloat() * 2;
             float py = -1 + rand.nextFloat() * 2;
             int label = px < 0 ? 0 : 1;
             trainSet.add(new SampleItem(new float[]{px, py}, label));
         }
+
+        //Test set: a few samples of each group
         List<SampleItem> testSet = new ArrayList<>(Arrays.asList(
+                //0: x < 0
                 new SampleItem(new float[]{-0.1f, -1}, 0),
                 new SampleItem(new float[]{-0.7f, 1}, 0),
-                
+
+                //1: x > 0
                 new SampleItem(new float[]{0.2f, -1}, 1),
                 new SampleItem(new float[]{0.9f, 0.5f}, 1)
         ));
+
+        //Print distribution of samples in both sets
+        System.out.println("Train set diversity:");
+        MLUtils.printSamplesDiversity(trainSet);
+        System.out.println("Test set diversity:");
+        MLUtils.printSamplesDiversity(testSet);
 
         //Convert to X,Y matrices
         Matrix2 trainX = SampleItem.toX(trainSet);
@@ -57,7 +73,7 @@ public class ExampleSimpleBinaryClassifier {
                 randSeed,
                 new int[]{2, 1}, //network layers
                 128, //mini-batch size
-                1000, //epochs
+                2000, //epochs
                 0.075f, //learning rate
                 0.7f, //L2 lambda regularization
                 DeepNeuralNetwork.RELU, //Hidden layers activation function

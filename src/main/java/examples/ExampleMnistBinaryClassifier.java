@@ -30,7 +30,7 @@ public class ExampleMnistBinaryClassifier {
     private void run() {
         long randSeed = 12345;
         
-        //Load data
+        //Load Mnist data
         List<SampleItem> allImageData = MnistLoader.loadMnistData();
         
         //Pick 0 and 1 images
@@ -38,13 +38,18 @@ public class ExampleMnistBinaryClassifier {
         List<SampleItem> digitImages = new ArrayList<>();
         digitImages.addAll(imageMap.get(0));
         digitImages.addAll(imageMap.get(1));
-        
-        
+
         //Split train and test set
         List<SampleItem> trainSet = new ArrayList<>();
         List<SampleItem> testSet = new ArrayList<>();
         MLUtils.splitDataSet(digitImages, 0.7f, randSeed, trainSet, testSet);
-        
+
+        //Print samples distribution in both sets
+        System.out.println("Train set diversity:");
+        MLUtils.printSamplesDiversity(trainSet);
+        System.out.println("Test set diversity:");
+        MLUtils.printSamplesDiversity(testSet);
+
         //Convert to X,Y matrices
         Matrix2 trainX = SampleItem.toX(trainSet);
         Matrix2 trainY = SampleItem.toY(trainSet);

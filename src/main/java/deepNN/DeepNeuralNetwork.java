@@ -42,7 +42,19 @@ public class DeepNeuralNetwork {
     private final ActivationFunction outputActivationFunc;
     private final LossFunction lossFunction;
     private Map<String, Matrix2> parameters;
-    
+
+    /**
+     * Creates a new neural network
+     * @param randSeed random seed
+     * @param layerDims array of dimensions for each layer (including input, hidden and output layers)
+     * @param miniBatchSize size of mini-batches using for gradient descent
+     * @param iterations number of epochs to run gradient descent on all mini-batches
+     * @param learningRate learning rate (alpha) for gradient descent
+     * @param lambda L2 regularization (lambda) for gradient descent
+     * @param hiddenActivationFunc activation function for all hidden layers
+     * @param outputActivationFunc activation function for the output layer
+     * @param lossFunction loss function for the output layer
+     */
     public DeepNeuralNetwork(long randSeed, int[] layerDims, int miniBatchSize, int iterations, float learningRate,
                              float lambda, ActivationFunction hiddenActivationFunc, ActivationFunction outputActivationFunc,
                              LossFunction lossFunction) {
@@ -57,6 +69,12 @@ public class DeepNeuralNetwork {
         this.lossFunction = lossFunction;
     }
 
+    /**
+     * Tran the given samples
+     * @param X features
+     * @param Y labels
+     * @param printCost true if you want to print the current cost in each iteration
+     */
     public void train(Matrix2 X, Matrix2 Y, boolean printCost) {
         //Initialize parameters
         long currentSeed = randSeed;
@@ -251,12 +269,18 @@ public class DeepNeuralNetwork {
         
         return grads;
     }
-    
+
+    /**
+     * Backward propagation for activation and linear
+     */
     private BackpropResult linearActivationBackward(Matrix2 dA, CacheItem cache, ActivationFunction activation, float lambda) {
         Matrix2 dZ = activation.backward(dA, cache.activationCache.Z);
         return linearBackward(dZ, cache.linearCache, lambda); 
     }
-    
+
+    /**
+     * Perform linear backward propagation
+     */
     private BackpropResult linearBackward(Matrix2 dZ, LinearCache cache, float lambda) {
         int m = cache.Aprev.cols();
         
@@ -272,6 +296,9 @@ public class DeepNeuralNetwork {
         return new BackpropResult(dAprev, dW, db);
     }
 
+    /**
+     * Update parameters using gradient
+     */
     private void updateParameters(Map<String, Matrix2> parameters, Map<String, Matrix2> grads, float learningRate) {
         int L = parameters.size() / 2;
         for (int l = 1; l <= L; l++) {
@@ -290,6 +317,9 @@ public class DeepNeuralNetwork {
         }
     }
 
+    /**
+     * Split input into random mini-batches. The miniBatches is populated.
+     */
     public void randomMiniBatches(Matrix2 X, Matrix2 Y, int miniBatchSize, long randSeed, List<MiniBatch> miniBatches) {
         //Shuffle sample indices
         int m = Y.cols();
@@ -314,36 +344,6 @@ public class DeepNeuralNetwork {
             Matrix2 batchY = Matrix2.getColumns(Y, batchIndices);
             miniBatches.add(new MiniBatch(batchX, batchY));
         }
-    }
-    
-    interface BackwardOp {
-        Matrix2 apply(Matrix2 dA, ActivationCache cache);
-    }
-    
-    private static class ReluBackward implements BackwardOp {
-        public static final BackwardOp INSTANCE = new ReluBackward();
-        @Override
-        public Matrix2 apply(Matrix2 dA, ActivationCache cache) {            
-            //Create mask where all values <=0 are 0
-            Matrix2 mask = cache.Z.greater(0f);
-
-            //dz = 0 if z <= 0 else keep value of da
-            return dA.mulEW(mask);
-        } 
-    }
-    
-    private static class SigmoidBackward implements BackwardOp {
-        public static final BackwardOp INSTANCE = new SigmoidBackward();
-        @Override
-        public Matrix2 apply(Matrix2 dA, ActivationCache cache) {
-            //S = 1 / (1 + e^(-Z))
-            Matrix2 S = cache.Z.sigmoid();
-
-            //dZ = dA * s * (1-s)
-            Matrix2 dZ = dA.mulEW(S).mulEW(S.oneMinus());
-
-            return dZ;
-        } 
     }
     
     private static class CacheItem {
