@@ -13,7 +13,8 @@ Features:
 * Gradient descent with mini-batches.
 
 Examples:
-* ExampleMnistBinaryClassifier: distinguish between 0s and 1s digit images from Mnist
+* ExampleMnistBinaryClassifier: distinguish between 0s and 1s digit images from Mnist.
+* ExampleMnistMultiClassClassifier: classify Mnist digit images from 0 to 9.
 
 This implementation uses Matrix2 class to perform linear algebra operations. That class was design for academic purposes and it's not optimized in any way. 
 
